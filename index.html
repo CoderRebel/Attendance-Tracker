@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Attendance Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Color Palette */
+            --bg-base: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Status Colors */
+            --safe-color: #10b981;
+            --safe-bg: rgba(16, 185, 129, 0.1);
+            --safe-border: rgba(16, 185, 129, 0.25);
+            
+            --danger-color: #f43f5e;
+            --danger-bg: rgba(244, 63, 94, 0.1);
+            --danger-border: rgba(244, 63, 94, 0.25);
+            
+            --chart-empty: rgba(255, 255, 255, 0.05);
+            
+            /* Accents */
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --accent-hover: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #db2777 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            overflow-x: hidden; /* Prevents horizontal scroll globally */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 12px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+
+        /* Typography */
+        h1 {
+            font-size: clamp(2rem, 6vw, 3rem); /* Responsive fluid font sizing */
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: 400;
+            margin-bottom: 24px;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            max-width: 300px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+        }
+        
+        .btn:active { transform: translateY(1px); }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            box-shadow: none;
+            color: var(--text-muted);
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            width: auto;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        /* Input Section */
+        #input-section {
+            width: 100%;
+            max-width: 750px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            padding: 32px 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin-top: 2vh;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        textarea {
+            width: 100%;
+            height: 220px;
+            background: rgba(0, 0, 0, 0.25);
+            color: var(--text-main);
+            padding: 16px;
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            resize: vertical;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        #error-msg {
+            color: var(--danger-color);
+            margin-top: 12px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+        /* Dashboard Section */
+        #dashboard-section {
+            display: none;
+            width: 100%;
+            max-width: 1300px;
+            animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        /* Aggregate Card */
+        #aggregate-container {
+            margin-bottom: 30px;
+            width: 100%;
+        }
+
+        .aggregate-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            border-radius: 20px;
+            padding: 28px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            max-width: 850px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .aggregate-info {
+            flex: 1;
+            width: 100%;
+        }
+
+        .aggregate-title {
+            font-size: clamp(1.3rem, 4vw, 1.6rem);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .aggregate-desc {
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            font-size: 0.9rem;
+        }
+
+        .aggregate-chart-wrapper {
+            position: relative;
+            height: 160px;
+            width: 160px;
+            flex-shrink: 0;
+            margin: 0 auto;
+        }
+
+        .aggregate-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        /* Grid System */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        /* Individual Subject Cards */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 24px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .subject-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .subject-code {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: rgba(255,255,255,0.05);
+            padding: 3px 10px;
+            border-radius: 16px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 140px;
+            width: 140px;
+            margin-bottom: 20px;
+        }
+
+        .chart-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding: 14px 4px;
+            border-top: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 18px;
+        }
+
+        .stat-block {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-block:not(:last-child) {
+            border-right: 1px solid var(--card-border);
+        }
+
+        .stat-value {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Insight Box */
+        .insight-box {
+            width: 100%;
+            text-align: center;
+            padding: 12px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            line-height: 1.3;
+        }
+
+        .insight-box.safe {
+            background-color: var(--safe-bg);
+            color: var(--safe-color);
+            border: 1px solid var(--safe-border);
+        }
+
+        .insight-box.danger {
+            background-color: var(--danger-bg);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-border);
+        }
+
+        .insight-box strong {
+            font-size: 1.05em;
+        }
+
+        .animate-card {
+            opacity: 0;
+            transform: translateY(15px);
+            animation: fadeUpCard 0.4s ease forwards;
+        }
+
+        @keyframes fadeUpCard {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- MOBILE SPECIFIC RESPONSIVE OVERRIDES --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px 10px;
+            }
+
+            .aggregate-card {
+                flex-direction: column-reverse; /* Put chart at top on mobile */
+                text-align: center;
+                padding: 24px 16px;
+                gap: 20px;
+            }
+
+            .aggregate-info .stats-row {
+                border: none;
+                padding: 12px 0;
+                margin-bottom: 16px;
+            }
+
+            .aggregate-chart-wrapper {
+                height: 150px;
+                width: 150px;
+            }
+
+            .aggregate-percentage {
+                font-size: 1.4rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr; /* 1 card per row on mobile screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN 1: Input Section -->
+    <div id="input-section">
+        <h1>Welcome, Shaan</h1>
+        <p class="subtitle">Paste your raw portal report to generate your dashboard.</p>
+        <textarea id="attendance-data" placeholder="Paste table rows here...&#10;&#10;Example:&#10;1 CEUL560.1 Climate Change Science Lecture 5 0 0 6 45.45&#10;2 CRT Campus Recruitment Training Lab 18 0 0 6 75.00"></textarea>
+        <button class="btn" onclick="processData()">Generate Dashboard</button>
+        <div id="error-msg"></div>
+    </div>
+
+    <!-- SCREEN 2: Dashboard Section -->
+    <div id="dashboard-section">
+        <div class="dashboard-header">
+            <h1>Attendance Overview</h1>
+            <p class="subtitle">Target Minimum: 75%</p>
+            <button class="btn btn-ghost" onclick="resetUI()">
+                <span style="margin-right: 6px;">←</span> Paste New Data
+            </button>
+        </div>
+        
+        <!-- Aggregate Summary -->
+        <div id="aggregate-container"></div>
+
+        <!-- Subject Cards Grid -->
+        <div class="dashboard-grid" id="dashboard-grid"></div>
+    </div>
+
+    <script>
+        let charts = [];
+
+        function processData() {
+            const rawData = document.getElementById('attendance-data').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            const inputSection = document.getElementById('input-section');
+            errorMsg.innerText = '';
+
+            if (!rawData) {
+                errorMsg.innerText = "Please paste your attendance report first.";
+                return;
+            }
+
+            const lines = rawData.split('\n');
+            const parsedData = [];
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                if (line.toLowerCase().includes('subject code') || line.toLowerCase().includes('percentage')) {
+                    continue;
+                }
+
+                const parts = line.split(/\s+/);
+                
+                if (parts.length >= 9) {
+                    const percentage = parts.pop();
+                    const absent = parseInt(parts.pop());
+                    const makeup = parseInt(parts.pop());
+                    const od = parseInt(parts.pop());
+                    const present = parseInt(parts.pop());
+                    const type = parts.pop();
+                    
+                    const code = parts[1];
+                    const name = parts.slice(2).join(' ');
+
+                    if (!isNaN(present) && !isNaN(absent)) {
+                        parsedData.push({ code, name, present, absent });
+                    }
+                }
+            }
+
+            if (parsedData.length === 0) {
+                errorMsg.innerText = "Format not recognized. Ensure you copied the full table rows.";
+                return;
+            }
+
+            inputSection.style.opacity = '0';
+            inputSection.style.transform = 'scale(0.96)';
+            
+            setTimeout(() => {
+                inputSection.style.display = 'none';
+                document.getElementById('dashboard-section').style.display = 'block';
+                renderDashboard(parsedData);
+            }, 300);
+        }
+
+        function createDonutChart(ctx, present, absent, color, emptyColor) {
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Attended', 'Missed'],
+                    datasets: [{
+                        data: [present, absent],
+                        backgroundColor: [color, emptyColor],
+                        borderWidth: 0,
+                        borderRadius: 3, 
+                        hoverOffset: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '80%', 
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleFont: { family: 'Inter', size: 12 },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderDashboard(attendanceData) {
+            const dashboardGrid = document.getElementById('dashboard-grid');
+            const aggregateContainer = document.getElementById('aggregate-container');
+            
+            dashboardGrid.innerHTML = ''; 
+            aggregateContainer.innerHTML = '';
+            
+            charts.forEach(chart => chart.destroy());
+            charts = [];
+
+            const rootStyles = getComputedStyle(document.documentElement);
+            const chartEmptyColor = rootStyles.getPropertyValue('--chart-empty').trim();
+            const safeColor = rootStyles.getPropertyValue('--safe-color').trim();
+            const dangerColor = rootStyles.getPropertyValue('--danger-color').trim();
+
+            // Aggregate Calculations
+            let totalPresent = 0;
+            let totalAbsent = 0;
+
+            attendanceData.forEach(subject => {
+                totalPresent += subject.present;
+                totalAbsent += subject.absent;
+            });
+
+            const totalOverallClasses = totalPresent + totalAbsent;
+            const aggregatePercentage = totalOverallClasses === 0 ? 0 : ((totalPresent / totalOverallClasses) * 100);
+            
+            const aggFormatted = aggregatePercentage.toFixed(2);
+            const isAggSafe = aggregatePercentage >= 75;
+            const aggStatusColor = isAggSafe ? safeColor : dangerColor;
+
+            let aggInsightHtml = '';
+            if (isAggSafe) {
+                const canMissAgg = Math.floor((totalPresent / 0.75) - totalOverallClasses);
+                aggInsightHtml = `<div class="insight-box safe">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    Overall buffer: Can miss <strong>${canMissAgg}</strong> classes
+                </div>`;
+            } else {
+                const neededAgg = Math.ceil((3 * totalOverallClasses) - (4 * totalPresent));
+                aggInsightHtml = `<div class="insight-box danger">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Overall deficit: Need <strong>${neededAgg}</strong> classes
+                </div>`;
+            }
+
+            // Render Aggregate Card
+            aggregateContainer.innerHTML = `
+                <div class="aggregate-card animate-card">
+                    <div class="aggregate-info">
+                        <div class="aggregate-title">Aggregate Attendance</div>
+                        <div class="aggregate-desc">Overall status across all subjects</div>
+                        
+                        <div class="stats-row">
+                            <div class="stat-block">
+                                <div class="stat-value" style="color: var(--safe-color);">${totalPresent}</div>
+                                <div class="stat-label">Attended</div>
+                            </div>
+                            <div class="stat-block">
+                                <div class="stat-value" style="color: var(--danger-color);">${totalAbsent}</div>
+                                <div class="stat-label">Missed</div>
+                            </div>
+                            <div class="stat-block">
+                                <div class="stat-value" style="color: var(--text-main);">${totalOverallClasses}</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                        </div>
+                        
+                        ${aggInsightHtml}
+                    </div>
+                    
+                    <div class="aggregate-chart-wrapper">
+                        <canvas id="chart-aggregate"></canvas>
+                        <div class="aggregate-percentage" style="color: ${aggStatusColor}">${aggFormatted}%</div>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const aggCtx = document.getElementById('chart-aggregate').getContext('2d');
+                charts.push(createDonutChart(aggCtx, totalPresent, totalAbsent, aggStatusColor, chartEmptyColor));
+            }, 50);
+
+            // Render Subject Cards
+            attendanceData.forEach((subject, index) => {
+                const totalClasses = subject.present + subject.absent;
+                const currentPercentage = totalClasses === 0 ? 0 : ((subject.present / totalClasses) * 100);
+                
+                const formattedPercentage = currentPercentage.toFixed(2);
+                const isSafe = currentPercentage >= 75;
+                const statusColor = isSafe ? safeColor : dangerColor;
+
+                let insightHtml = '';
+                
+                if (isSafe) {
+                    const canMiss = Math.floor((subject.present / 0.75) - totalClasses);
+                    if (canMiss > 0) {
+                        insightHtml = `<div class="insight-box safe">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                            Can miss <strong>${canMiss}</strong> class${canMiss > 1 ? 'es' : ''} safely
+                        </div>`;
+                    } else {
+                        insightHtml = `<div class="insight-box safe">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            On boundary. Do not miss!
+                        </div>`;
+                    }
+                } else {
+                    const classesNeeded = Math.ceil((3 * totalClasses) - (4 * subject.present));
+                    insightHtml = `<div class="insight-box danger">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Need <strong>${classesNeeded}</strong> class${classesNeeded > 1 ? 'es' : ''} to recover
+                    </div>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'card animate-card';
+                card.style.animationDelay = `${(index + 1) * 0.04}s`; 
+                
+                card.innerHTML = `
+                    <div class="subject-title">${subject.name}</div>
+                    <div class="subject-code">${subject.code}</div>
+                    
+                    <div class="chart-wrapper">
+                        <canvas id="chart-${index}"></canvas>
+                        <div class="chart-percentage" style="color: ${statusColor}">${formattedPercentage}%</div>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-block">
+                            <div class="stat-value" style="color: var(--safe-color)">${subject.present}</div>
+                            <div class="stat-label">Attended</div>
+                        </div>
+                        <div class="stat-block">
+                            <div class="stat-value" style="color: var(--text-main)">${totalClasses}</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="stat-block">
+                            <div class="stat-value" style="color: var(--danger-color)">${subject.absent}</div>
+                            <div class="stat-label">Missed</div>
+                        </div>
+                    </div>
+
+                    ${insightHtml}
+                `;
+
+                dashboardGrid.appendChild(card);
+
+                setTimeout(() => {
+                    const ctx = document.getElementById(`chart-${index}`).getContext('2d');
+                    charts.push(createDonutChart(ctx, subject.present, subject.absent, statusColor, chartEmptyColor));
+                }, 50);
+            });
+        }
+
+        function resetUI() {
+            const dashboard = document.getElementById('dashboard-section');
+            const inputSection = document.getElementById('input-section');
+            
+            dashboard.style.display = 'none';
+            inputSection.style.display = 'block';
+            
+            void inputSection.offsetWidth;
+            
+            inputSection.style.opacity = '1';
+            inputSection.style.transform = 'scale(1)';
+            document.getElementById('error-msg').innerText = '';
+        }
+    </script>
+</body>
+</html>
