@@ -587,13 +587,13 @@
                 const canMissAgg = Math.floor((totalPresent / 0.75) - totalOverallClasses);
                 aggInsightHtml = `<div class="insight-box safe">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                    Overall buffer: Can miss <strong>${canMissAgg}</strong> classes
+                    Overall buffer: Can miss <strong>${canMissAgg}</strong> hours
                 </div>`;
             } else {
                 const neededAgg = Math.ceil((3 * totalOverallClasses) - (4 * totalPresent));
                 aggInsightHtml = `<div class="insight-box danger">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Overall deficit: Need <strong>${neededAgg}</strong> classes
+                    Overall deficit: Need <strong>${neededAgg}</strong> hours
                 </div>`;
             }
 
@@ -650,7 +650,7 @@
                     if (canMiss > 0) {
                         insightHtml = `<div class="insight-box safe">
                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                            Can miss <strong>${canMiss}</strong> class${canMiss > 1 ? 'es' : ''} safely
+                            Can miss <strong>${canMiss}</strong> hour${canMiss > 1 ? 's' : ''} safely
                         </div>`;
                     } else {
                         insightHtml = `<div class="insight-box safe">
@@ -662,7 +662,7 @@
                     const classesNeeded = Math.ceil((3 * totalClasses) - (4 * subject.present));
                     insightHtml = `<div class="insight-box danger">
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Need <strong>${classesNeeded}</strong> class${classesNeeded > 1 ? 'es' : ''} to recover
+                        Need <strong>${classesNeeded}</strong> hour${classesNeeded > 1 ? 's' : ''} to recover
                     </div>`;
                 }
 
